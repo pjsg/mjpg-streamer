@@ -171,7 +171,7 @@ Return Value: * buffer.: will become filled with bytes read
 /* read just a single line or timeout */
 int _readline(int fd, iobuffer *iobuf, void *buffer, size_t len, int timeout)
 {
-    char c = '\0', *out = buffer;
+    char c = '\0', *out = (char *) buffer;
     int i;
 
     memset(buffer, 0, len);
@@ -316,7 +316,7 @@ void send_snapshot(int fd, int input_number)
     frame_size = pglobal->in[input_number].size;
 
     /* allocate a buffer for this single frame */
-    if((frame = malloc(frame_size + 1)) == NULL) {
+    if((frame = (unsigned char *) malloc(frame_size + 1)) == NULL) {
         free(frame);
         pthread_mutex_unlock(&pglobal->in[input_number].db);
         send_error(fd, 500, "not enough memory");
@@ -325,7 +325,7 @@ void send_snapshot(int fd, int input_number)
     /* copy v4l2_buffer timeval to user space */
     timestamp = pglobal->in[input_number].timestamp;
 
-    memcpy(frame, pglobal->in[input_number].buf, frame_size);
+    memcpy(frame, pglobal->in[input_number].buf->data, frame_size);
     DBG("got frame (size: %d kB)\n", frame_size / 1024);
 
     pthread_mutex_unlock(&pglobal->in[input_number].db);
@@ -387,7 +387,7 @@ void send_stream(int fd, int input_number)
             DBG("increasing buffer size to %d\n", frame_size);
 
             max_frame_size = frame_size + TEN_K;
-            if((tmp = realloc(frame, max_frame_size)) == NULL) {
+            if((tmp = (unsigned char *) realloc(frame, max_frame_size)) == NULL) {
                 free(frame);
                 pthread_mutex_unlock(&pglobal->in[input_number].db);
                 send_error(fd, 500, "not enough memory");
@@ -400,7 +400,7 @@ void send_stream(int fd, int input_number)
         /* copy v4l2_buffer timeval to user space */
         timestamp = pglobal->in[input_number].timestamp;
 
-        memcpy(frame, pglobal->in[input_number].buf, frame_size);
+        memcpy(frame, pglobal->in[input_number].buf->data, frame_size);
         DBG("got frame (size: %d kB)\n", frame_size / 1024);
 
         pthread_mutex_unlock(&pglobal->in[input_number].db);
@@ -815,7 +815,7 @@ void *client_thread(void *arg)
         /* only accept certain characters */
         len = MIN(MAX(strspn(pb, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-=&1234567890%./"), 0), 100);
 
-        req.parameter = malloc(len + 1);
+        req.parameter = (char *) malloc(len + 1);
         if(req.parameter == NULL) {
             exit(EXIT_FAILURE);
         }
@@ -846,7 +846,7 @@ void *client_thread(void *arg)
 
         pb += strlen("GET /");
         len = MIN(MAX(strspn(pb, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ._-1234567890"), 0), 100);
-        req.parameter = malloc(len + 1);
+        req.parameter = (char *) malloc(len + 1);
         if(req.parameter == NULL) {
             exit(EXIT_FAILURE);
         }
@@ -971,7 +971,7 @@ Return Value: -
 ******************************************************************************/
 void server_cleanup(void *arg)
 {
-    context *pcontext = arg;
+    context *pcontext = (context *) arg;
     int i;
 
     OPRINT("cleaning up ressources allocated by server thread #%02d\n", pcontext->id);
@@ -1000,7 +1000,7 @@ void *server_thread(void *arg)
     int err;
     int i;
 
-    context *pcontext = arg;
+    context *pcontext = (context *) arg;
     pglobal = pcontext->pglobal;
 
     /* set cleanup handler to cleanup ressources */
@@ -1075,7 +1075,7 @@ void *server_thread(void *arg)
     /* create a child for every client that connects */
     while(!pglobal->stop) {
         //int *pfd = (int *)malloc(sizeof(int));
-        cfd *pcfd = malloc(sizeof(cfd));
+        cfd *pcfd = (cfd *) malloc(sizeof(cfd));
 
         if(pcfd == NULL) {
             fprintf(stderr, "failed to allocate (a very small amount of) memory\n");

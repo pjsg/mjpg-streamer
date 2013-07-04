@@ -22,6 +22,7 @@
 
 #include <syslog.h>
 #include "../mjpg_streamer.h"
+#include "../utils.h"
 #define INPUT_PLUGIN_PREFIX " i: "
 #define IPRINT(...) { char _bf[1024] = {0}; snprintf(_bf, sizeof(_bf)-1, __VA_ARGS__); fprintf(stderr, "%s", INPUT_PLUGIN_PREFIX); fprintf(stderr, "%s", _bf); syslog(LOG_INFO, "%s", _bf); }
 
@@ -69,7 +70,7 @@ struct _input {
     pthread_cond_t  db_update;
 
     /* global JPG frame, this is more or less the "database" */
-    unsigned char *buf;
+    BUFFER *buf;
     int size;
 
     /* v4l2_buffer timestamp */

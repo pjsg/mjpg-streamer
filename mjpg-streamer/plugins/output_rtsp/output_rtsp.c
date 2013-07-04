@@ -168,7 +168,7 @@ void *worker_thread(void *arg)
             DBG("increasing buffer size to %d\n", frame_size);
 
             max_frame_size = frame_size + (1 << 16);
-            if((tmp_framebuffer = realloc(frame, max_frame_size)) == NULL) {
+            if((tmp_framebuffer = (unsigned char *) realloc(frame, max_frame_size)) == NULL) {
                 pthread_mutex_unlock(&pglobal->in[input_number].db);
                 LOG("not enough memory\n");
                 return NULL;

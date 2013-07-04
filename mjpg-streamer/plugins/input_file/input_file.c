@@ -116,7 +116,7 @@ int input_init(input_parameter *param, int id)
         case 4:
         case 5:
             DBG("case 4,5\n");
-            folder = malloc(strlen(optarg) + 2);
+            folder = (char *) malloc(strlen(optarg) + 2);
             strcpy(folder, optarg);
             if(optarg[strlen(optarg)-1] != '/')
                 strcat(folder, "/");
@@ -133,7 +133,7 @@ int input_init(input_parameter *param, int id)
         case 8:
         case 9:
             DBG("case 8,9\n");
-            filename = malloc(strlen(optarg) + 2);
+            filename = (char *) malloc(strlen(optarg) + 2);
             strcpy(filename, optarg);
             break;
 
@@ -185,14 +185,14 @@ int input_run(int id)
     }
 
     size = sizeof(struct inotify_event) + (1 << 16);
-    ev = malloc(size);
+    ev = (struct inotify_event *) malloc(size);
     if(ev == NULL) {
         perror("not enough memory");
         return 1;
     }
 
     if(pthread_create(&worker, 0, worker_thread, NULL) != 0) {
-        free(pglobal->in[id].buf);
+        buffer_free(pglobal->in[id].buf);
         fprintf(stderr, "could not start worker thread\n");
         exit(EXIT_FAILURE);
     }
@@ -279,15 +279,15 @@ void *worker_thread(void *arg)
 
         /* allocate memory for frame */
         if(pglobal->in[plugin_number].buf != NULL) free(pglobal->in[plugin_number].buf);
-        pglobal->in[plugin_number].buf = malloc(filesize + (1 << 16));
+        pglobal->in[plugin_number].buf = buffer_alloc(filesize + (1 << 16));
         if(pglobal->in[plugin_number].buf == NULL) {
             fprintf(stderr, "could not allocate memory\n");
             break;
         }
 
-        if((pglobal->in[plugin_number].size = read(file, pglobal->in[plugin_number].buf, filesize)) == -1) {
+        if((pglobal->in[plugin_number].size = read(file, pglobal->in[plugin_number].buf->data, filesize)) == -1) {
             perror("could not read from file");
-            free(pglobal->in[plugin_number].buf); pglobal->in[plugin_number].buf = NULL; pglobal->in[plugin_number].size = 0;
+            buffer_free(pglobal->in[plugin_number].buf); pglobal->in[plugin_number].buf = NULL; pglobal->in[plugin_number].size = 0;
             pthread_mutex_unlock(&pglobal->in[plugin_number].db);
             close(file);
             break;
@@ -331,7 +331,7 @@ void worker_cleanup(void *arg)
     first_run = 0;
     DBG("cleaning up ressources allocated by input thread\n");
 
-    if(pglobal->in[plugin_number].buf != NULL) free(pglobal->in[plugin_number].buf);
+    if(pglobal->in[plugin_number].buf != NULL) buffer_free(pglobal->in[plugin_number].buf);
 
     free(ev);
 

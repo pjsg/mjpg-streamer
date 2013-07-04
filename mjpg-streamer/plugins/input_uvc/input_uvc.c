@@ -247,7 +247,7 @@ int input_init(input_parameter *param, int id)
     cams[id].pglobal = param->global;
 
     /* allocate webcam datastructure */
-    cams[id].videoIn = malloc(sizeof(struct vdIn));
+    cams[id].videoIn = (struct vdIn *) malloc(sizeof(struct vdIn));
     if(cams[id].videoIn == NULL) {
         IPRINT("not enough memory for videoIn\n");
         exit(EXIT_FAILURE);
@@ -263,6 +263,7 @@ int input_init(input_parameter *param, int id)
         IPRINT("JPEG Quality......: %d\n", gquality);
 
     DBG("vdIn pn: %d\n", id);
+    cams[id].videoIn->nb_buffer = 3;
     /* open video device and prepare data structure */
     if(init_videoIn(cams[id].videoIn, dev, width, height, fps, format, 1, cams[id].pglobal, id) < 0) {
         IPRINT("init_VideoIn failed\n");
@@ -301,7 +302,7 @@ Return Value: always 0
 ******************************************************************************/
 int input_run(int id)
 {
-    cams[id].pglobal->in[id].buf = malloc(cams[id].videoIn->framesizeIn);
+    cams[id].pglobal->in[id].buf = buffer_alloc(cams[id].videoIn->framesizeIn);
     if(cams[id].pglobal->in[id].buf == NULL) {
         fprintf(stderr, "could not allocate memory\n");
         exit(EXIT_FAILURE);
@@ -362,7 +363,7 @@ Return Value: unused, always NULL
 void *cam_thread(void *arg)
 {
 
-    context *pcontext = arg;
+    context *pcontext = (context *) arg;
     pglobal = pcontext->pglobal;
 
     /* set cleanup handler to cleanup allocated ressources */
@@ -404,7 +405,7 @@ void *cam_thread(void *arg)
          */
         if(pcontext->videoIn->formatIn == V4L2_PIX_FMT_YUYV) {
             DBG("compressing frame from input: %d\n", (int)pcontext->id);
-            pglobal->in[pcontext->id].size = compress_yuyv_to_jpeg(pcontext->videoIn, pglobal->in[pcontext->id].buf, pcontext->videoIn->framesizeIn, gquality);
+            pglobal->in[pcontext->id].size = compress_yuyv_to_jpeg(pcontext->videoIn, pglobal->in[pcontext->id].buf, gquality);
         } else {
             DBG("copying frame from input: %d\n", (int)pcontext->id);
             pglobal->in[pcontext->id].size = memcpy_picture(pglobal->in[pcontext->id].buf, pcontext->videoIn->tmpbuffer, pcontext->videoIn->buf.bytesused);
@@ -449,7 +450,7 @@ Return Value:
 void cam_cleanup(void *arg)
 {
     static unsigned char first_run = 1;
-    context *pcontext = arg;
+    context *pcontext = (context *) arg;
     pglobal = pcontext->pglobal;
     if(!first_run) {
         DBG("already cleaned up ressources\n");

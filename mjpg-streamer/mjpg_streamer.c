@@ -329,23 +329,23 @@ int main(int argc, char *argv[])
             closelog();
             exit(EXIT_FAILURE);
         }
-        global.in[i].init = dlsym(global.in[i].handle, "input_init");
+        global.in[i].init = (int (*)(input_parameter *, int)) dlsym(global.in[i].handle, "input_init");
         if(global.in[i].init == NULL) {
             LOG("%s\n", dlerror());
             exit(EXIT_FAILURE);
         }
-        global.in[i].stop = dlsym(global.in[i].handle, "input_stop");
+        global.in[i].stop = (int (*)(int)) dlsym(global.in[i].handle, "input_stop");
         if(global.in[i].stop == NULL) {
             LOG("%s\n", dlerror());
             exit(EXIT_FAILURE);
         }
-        global.in[i].run = dlsym(global.in[i].handle, "input_run");
+        global.in[i].run = (int (*)(int)) dlsym(global.in[i].handle, "input_run");
         if(global.in[i].run == NULL) {
             LOG("%s\n", dlerror());
             exit(EXIT_FAILURE);
         }
         /* try to find optional command */
-        global.in[i].cmd = dlsym(global.in[i].handle, "input_cmd");
+        global.in[i].cmd = (int (*)(int,  unsigned int,  unsigned int,  int)) dlsym(global.in[i].handle, "input_cmd");
 
         global.in[i].param.parameters = strchr(input[i], ' ');
         split_parameters(global.in[i].param.parameters, &global.in[i].param.argc, global.in[i].param.argv);
@@ -372,24 +372,24 @@ int main(int argc, char *argv[])
             closelog();
             exit(EXIT_FAILURE);
         }
-        global.out[i].init = dlsym(global.out[i].handle, "output_init");
+        global.out[i].init = (int (*)(output_parameter *, int)) dlsym(global.out[i].handle, "output_init");
         if(global.out[i].init == NULL) {
             LOG("%s\n", dlerror());
             exit(EXIT_FAILURE);
         }
-        global.out[i].stop = dlsym(global.out[i].handle, "output_stop");
+        global.out[i].stop = (int (*)(int)) dlsym(global.out[i].handle, "output_stop");
         if(global.out[i].stop == NULL) {
             LOG("%s\n", dlerror());
             exit(EXIT_FAILURE);
         }
-        global.out[i].run = dlsym(global.out[i].handle, "output_run");
+        global.out[i].run = (int (*)(int)) dlsym(global.out[i].handle, "output_run");
         if(global.out[i].run == NULL) {
             LOG("%s\n", dlerror());
             exit(EXIT_FAILURE);
         }
 
         /* try to find optional command */
-        global.out[i].cmd = dlsym(global.out[i].handle, "output_cmd");
+        global.out[i].cmd = (int (*)(int,  unsigned int,  unsigned int,  int)) dlsym(global.out[i].handle, "output_cmd");
 
         global.out[i].param.parameters = strchr(output[i], ' ');
         split_parameters(global.out[i].param.parameters, &global.out[i].param.argc, global.out[i].param.argv);

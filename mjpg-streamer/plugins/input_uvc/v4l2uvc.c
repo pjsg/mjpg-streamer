@@ -25,6 +25,7 @@
 
 #include <stdlib.h>
 #include <errno.h>
+#include <assert.h>
 #include "v4l2uvc.h"
 #include "huffman.h"
 #include "dynctrl.h"
@@ -161,18 +162,19 @@ int init_videoIn(struct vdIn *vd, char *device, int width,
     }
 
     /* alloc a temp buffer to reconstruct the pict */
-    vd->framesizeIn = (vd->width * vd->height << 1);
     switch(vd->formatIn) {
     case V4L2_PIX_FMT_MJPEG:
+        vd->framesizeIn = (vd->width * vd->height / 3);
         vd->tmpbuffer = (unsigned char *) calloc(1, (size_t) vd->framesizeIn);
         if(!vd->tmpbuffer)
             goto error;
-        vd->framebuffer =
-            (unsigned char *) calloc(1, (size_t) vd->width * (vd->height + 8) * 2);
         break;
     case V4L2_PIX_FMT_YUYV:
+        vd->framesizeIn = (vd->width * vd->height << 1);
         vd->framebuffer =
             (unsigned char *) calloc(1, (size_t) vd->framesizeIn);
+	if(!vd->framebuffer)
+	    goto error;
         break;
     default:
         fprintf(stderr, " should never arrive exit fatal !!\n");
@@ -181,8 +183,6 @@ int init_videoIn(struct vdIn *vd, char *device, int width,
 
     }
 
-    if(!vd->framebuffer)
-        goto error;
     return 0;
 error:
     free(pglobal->in[id].in_parameters);
@@ -279,7 +279,7 @@ static int init_v4l2(struct vdIn *vd)
      * request buffers
      */
     memset(&vd->rb, 0, sizeof(struct v4l2_requestbuffers));
-    vd->rb.count = NB_BUFFER;
+    vd->rb.count = vd->nb_buffer;
     vd->rb.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     vd->rb.memory = V4L2_MEMORY_MMAP;
 
@@ -292,7 +292,7 @@ static int init_v4l2(struct vdIn *vd)
     /*
      * map the buffers
      */
-    for(i = 0; i < NB_BUFFER; i++) {
+    for(i = 0; i < vd->nb_buffer; i++) {
         memset(&vd->buf, 0, sizeof(struct v4l2_buffer));
         vd->buf.index = i;
         vd->buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -320,7 +320,7 @@ static int init_v4l2(struct vdIn *vd)
     /*
      * Queue the buffers.
      */
-    for(i = 0; i < NB_BUFFER; ++i) {
+    for(i = 0; i < vd->nb_buffer; ++i) {
         memset(&vd->buf, 0, sizeof(struct v4l2_buffer));
         vd->buf.index = i;
         vd->buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -391,7 +391,7 @@ Description.:
 Input Value.:
 Return Value:
 ******************************************************************************/
-int memcpy_picture(unsigned char *out, unsigned char *buf, int size)
+int memcpy_picture(BUFFER *out, unsigned char *buf, int size)
 {
     unsigned char *ptdeb, *ptlimit, *ptcur = buf;
     int sizein, pos = 0;
@@ -405,14 +405,16 @@ int memcpy_picture(unsigned char *out, unsigned char *buf, int size)
             return pos;
         sizein = ptcur - ptdeb;
 
-        memcpy(out + pos, buf, sizein); pos += sizein;
-        memcpy(out + pos, dht_data, sizeof(dht_data)); pos += sizeof(dht_data);
-        memcpy(out + pos, ptcur, size - sizein); pos += size - sizein;
+        memcpy(out->data + pos, buf, sizein); pos += sizein;
+        memcpy(out->data + pos, dht_data, sizeof(dht_data)); pos += sizeof(dht_data);
+        memcpy(out->data + pos, ptcur, size - sizein); pos += size - sizein;
     } else {
-        memcpy(out + pos, ptcur, size); pos += size;
+        memcpy(out->data + pos, ptcur, size); pos += size;
     }
+    assert(pos <= out->maxlen);
     return pos;
 }
+
 
 int uvcGrab(struct vdIn *vd)
 {
@@ -754,7 +756,7 @@ int setResolution(struct vdIn *vd, int width, int height)
     if(video_disable(vd, STREAMING_PAUSED) == 0) {  // do streamoff
         DBG("Unmap buffers\n");
         int i;
-        for(i = 0; i < NB_BUFFER; i++)
+        for(i = 0; i < vd->nb_buffer; i++)
             munmap(vd->mem[i], vd->buf.length);
 
         if(CLOSE_VIDEO(vd->fd) == 0) {

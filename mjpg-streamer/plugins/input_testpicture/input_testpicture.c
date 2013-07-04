@@ -187,14 +187,14 @@ Return Value: 0
 ******************************************************************************/
 int input_run(int id)
 {
-    pglobal->in[id].buf = malloc(256 * 1024);
+    pglobal->in[id].buf = buffer_alloc(256 * 1024);
     if(pglobal->in[id].buf == NULL) {
         fprintf(stderr, "could not allocate memory\n");
         exit(EXIT_FAILURE);
     }
 
     if(pthread_create(&worker, 0, worker_thread, NULL) != 0) {
-        free(pglobal->in[id].buf);
+        buffer_free(pglobal->in[id].buf);
         fprintf(stderr, "could not start worker thread\n");
         exit(EXIT_FAILURE);
     }
@@ -238,8 +238,7 @@ void *worker_thread(void *arg)
         pthread_mutex_lock(&pglobal->in[plugin_number].db);
 
         i = (i + 1) % LENGTH_OF(pics->sequence);
-        pglobal->in[plugin_number].size = pics->sequence[i].size;
-        memcpy(pglobal->in[plugin_number].buf, pics->sequence[i].data, pglobal->in[plugin_number].size);
+        pglobal->in[plugin_number].size = buffer_memcpy(pglobal->in[plugin_number].buf, pics->sequence[i].data, pics->sequence[i].size);
 
         /* signal fresh_frame */
         pthread_cond_broadcast(&pglobal->in[plugin_number].db_update);

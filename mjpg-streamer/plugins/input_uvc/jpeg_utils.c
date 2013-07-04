@@ -105,7 +105,7 @@ Input Value.: buffer is the already allocated buffer memory that will hold
               the compressed picture. "size" is the size in bytes.
 Return Value: -
 ******************************************************************************/
-GLOBAL(void) dest_buffer(j_compress_ptr cinfo, unsigned char *buffer, int size, int *written)
+GLOBAL(void) dest_buffer(j_compress_ptr cinfo, BUFFER *buffer, int *written)
 {
     mjpg_dest_ptr dest;
 
@@ -117,9 +117,9 @@ GLOBAL(void) dest_buffer(j_compress_ptr cinfo, unsigned char *buffer, int size, 
     dest->pub.init_destination = init_destination;
     dest->pub.empty_output_buffer = empty_output_buffer;
     dest->pub.term_destination = term_destination;
-    dest->outbuffer = buffer;
-    dest->outbuffer_size = size;
-    dest->outbuffer_cursor = buffer;
+    dest->outbuffer = buffer->data;
+    dest->outbuffer_size = buffer->maxlen;
+    dest->outbuffer_cursor = buffer->data;
     dest->written = written;
 }
 
@@ -134,7 +134,7 @@ Input Value.: video structure from v4l2uvc.c/h, destination buffer and buffersiz
               the buffer must be large enough, no error/size checking is done!
 Return Value: the buffer will contain the compressed data
 ******************************************************************************/
-int compress_yuyv_to_jpeg(struct vdIn *vd, unsigned char *buffer, int size, int quality)
+int compress_yuyv_to_jpeg(struct vdIn *vd, BUFFER *buffer, int quality)
 {
     struct jpeg_compress_struct cinfo;
     struct jpeg_error_mgr jerr;
@@ -143,13 +143,13 @@ int compress_yuyv_to_jpeg(struct vdIn *vd, unsigned char *buffer, int size, int 
     int z;
     static int written;
 
-    line_buffer = calloc(vd->width * 3, 1);
+    line_buffer = (unsigned char *) calloc(vd->width * 3, 1);
     yuyv = vd->framebuffer;
 
     cinfo.err = jpeg_std_error(&jerr);
     jpeg_create_compress(&cinfo);
     /* jpeg_stdio_dest (&cinfo, file); */
-    dest_buffer(&cinfo, buffer, size, &written);
+    dest_buffer(&cinfo, buffer, &written);
 
     cinfo.image_width = vd->width;
     cinfo.image_height = vd->height;

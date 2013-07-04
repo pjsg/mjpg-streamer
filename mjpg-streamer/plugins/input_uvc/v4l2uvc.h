@@ -37,7 +37,7 @@
 #include <sys/select.h>
 #include <linux/videodev2.h>
 #include "../../mjpg_streamer.h"
-#define NB_BUFFER 4
+#define NB_BUFFER_MAX 4
 
 
 #define IOCTL_RETRY 4
@@ -78,7 +78,8 @@ struct vdIn {
     struct v4l2_format fmt;
     struct v4l2_buffer buf;
     struct v4l2_requestbuffers rb;
-    void *mem[NB_BUFFER];
+    int nb_buffer;
+    void *mem[NB_BUFFER_MAX];
     unsigned char *tmpbuffer;
     unsigned char *framebuffer;
     streaming_state streamingState;
@@ -123,7 +124,7 @@ void enumerateControls(struct vdIn *vd, globals *pglobal, int id);
 void control_readed(struct vdIn *vd, struct v4l2_queryctrl *ctrl, globals *pglobal, int id);
 int setResolution(struct vdIn *vd, int width, int height);
 
-int memcpy_picture(unsigned char *out, unsigned char *buf, int size);
+int memcpy_picture(BUFFER *out, unsigned char *buf, int size);
 int uvcGrab(struct vdIn *vd);
 int close_v4l2(struct vdIn *vd);
 

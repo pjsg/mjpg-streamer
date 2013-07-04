@@ -218,7 +218,7 @@ void *worker_thread(void *arg)
             DBG("increasing buffer size to %d\n", frame_size);
 
             max_frame_size = frame_size + (1 << 16);
-            if((tmp_framebuffer = realloc(frame, max_frame_size)) == NULL) {
+            if((tmp_framebuffer = (unsigned char *) realloc(frame, max_frame_size)) == NULL) {
                 pthread_mutex_unlock(&pglobal->in[input_number].db);
                 LOG("not enough memory\n");
                 return NULL;
@@ -386,7 +386,7 @@ int output_init(output_parameter *param)
         case 2:
         case 3:
             DBG("case 2,3\n");
-            folder = malloc(strlen(optarg) + 1);
+            folder = (char *) malloc(strlen(optarg) + 1);
             strcpy(folder, optarg);
             if(folder[strlen(folder)-1] == '/')
                 folder[strlen(folder)-1] = '\0';

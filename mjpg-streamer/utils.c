@@ -31,6 +31,7 @@
 #include <limits.h>
 #include <linux/stat.h>
 #include <sys/stat.h>
+#include <assert.h>
 
 #include "utils.h"
 
@@ -84,4 +85,46 @@ void daemon_mode(void)
     fr = dup(0);
     fr = dup(0);
 }
+
+
+// Buffer functions
+//
+BUFFER *buffer_alloc(size_t bytes)
+{
+    BUFFER *buffer = (BUFFER *) malloc(sizeof(BUFFER));
+    if (buffer) {
+	buffer->maxlen = bytes;
+        buffer->data = (unsigned char *) malloc(bytes);
+	if (!buffer->data) {
+	    free(buffer);
+	    buffer = NULL;
+	}
+    }
+
+    return buffer;
+}
+
+void buffer_free(BUFFER *buffer) 
+{
+    if (buffer) {
+	free(buffer->data);
+	free(buffer);
+    }
+}
+
+/******************************************************************************
+Description.:
+Input Value.:
+Return Value:
+******************************************************************************/
+int buffer_memcpy(BUFFER *out, const unsigned char *buf, int size)
+{
+    if (size > out->maxlen) {
+        fprintf(stderr, "Attempt to copy %d bytes into buffer of size %d\n", size, (int) out->maxlen);
+        abort();
+    }
+    memcpy(out->data, buf, size); 
+    return size;
+}
+
 

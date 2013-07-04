@@ -151,7 +151,7 @@ int output_init(output_parameter *param, int id)
         case 6:
         case 7:
             DBG("case 6,7\n");
-            www_folder = malloc(strlen(optarg) + 2);
+            www_folder = (char *) malloc(strlen(optarg) + 2);
             strcpy(www_folder, optarg);
             if(optarg[strlen(optarg)-1] != '/')
                 strcat(www_folder, "/");

@@ -100,7 +100,7 @@ void *worker_thread(void *arg)
     double sv = -1.0, max_sv = 100.0, delta = 500;
     int focus = 255, step = 10, max_focus = 100, search_focus = 1;
 
-    if((frame = malloc(256 * 1024)) == NULL) {
+    if((frame = (unsigned char *) malloc(256 * 1024)) == NULL) {
         OPRINT("not enough memory for worker thread\n");
         exit(EXIT_FAILURE);
     }

@@ -19,6 +19,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA    #
 #                                                                              #
 *******************************************************************************/
+#ifndef _UTILS_H
+#define _UTILS_H
 
 #define ABS(a) (((a) < 0) ? -(a) : (a))
 #ifndef MIN
@@ -28,6 +30,16 @@
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 #define LENGTH_OF(x) (sizeof(x)/sizeof(x[0]))
+
+typedef struct _buffer {
+	size_t maxlen;
+	unsigned char *data;
+} BUFFER;
+
+BUFFER *buffer_alloc(size_t bytes);
+void buffer_free(BUFFER *buffer) ;
+int buffer_memcpy(BUFFER *out, const unsigned char *buf, int size);
+
 
 /******************************************************************************
 Description.: getopt must get reset, otherwise it can only be called once
@@ -49,3 +61,5 @@ static inline void reset_getopt(void)
 }
 
 void daemon_mode(void);
+
+#endif

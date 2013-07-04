@@ -211,7 +211,7 @@ int input_init(input_parameter *param, int plugin_no)
     pglobal = param->global;
 
     /* allocate webcam datastructure */
-    videoIn = malloc(sizeof(struct vdIn));
+    videoIn = (struct vdIn *) malloc(sizeof(struct vdIn));
     if(videoIn == NULL) {
         IPRINT("not enough memory for videoIn\n");
         exit(EXIT_FAILURE);
@@ -252,7 +252,7 @@ Return Value: always 0
 ******************************************************************************/
 int input_run(int id)
 {
-    pglobal->in[id].buf = malloc(videoIn->framesizeIn);
+    pglobal->in[id].buf = buffer_alloc(videoIn->framesizeIn);
     if(pglobal->in[id].buf == NULL) {
         fprintf(stderr, "could not allocate memory\n");
         exit(EXIT_FAILURE);
