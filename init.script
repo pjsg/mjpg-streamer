@@ -1,0 +1,60 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:        mjpg-streamer
+# Required-Start:  $network $remote_fs $syslog
+# Required-Stop:   $network $remote_fs $syslog
+# Default-Start:   2 3 4 5
+# Default-Stop: 
+# Short-Description: Start mjpg-streamer daemon
+### END INIT INFO
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+. /lib/lsb/init-functions
+
+D=/usr/src/mjpg-streamer/mjpg-streamer
+DAEMON=$D/mjpg_streamer
+PIDFILE=/var/run/mjpg.pid
+
+test -x $DAEMON || exit 5
+
+if [ -r /etc/default/mjpg-streamer ]; then
+	. /etc/default/mjpg-streamer
+fi
+
+
+case $1 in
+	start)
+		log_daemon_msg "Starting mjpg-streamer server" "mjpg-streamer"
+  		start-stop-daemon --start --quiet --oknodo --background --make-pidfile --pidfile $PIDFILE --startas $DAEMON -- -i "$D/input_uvc.so" -o "$D/output_http.so -w $D/www -p 80"
+		status=$?
+		log_end_msg $status
+  		;;
+	stop)
+		log_daemon_msg "Stopping mjpg-streamer server" "mjpg-streamer"
+  		start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE
+		log_end_msg $?
+		rm -f $PIDFILE
+  		;;
+	restart|force-reload)
+		$0 stop && sleep 2 && $0 start
+  		;;
+	try-restart)
+		if $0 status >/dev/null; then
+			$0 restart
+		else
+			exit 0
+		fi
+		;;
+	reload)
+		exit 3
+		;;
+	status)
+		status_of_proc $DAEMON "mjpg-streamer server"
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|try-restart|force-reload|status}"
+		exit 2
+		;;
+esac
